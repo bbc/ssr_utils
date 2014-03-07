@@ -1,0 +1,18 @@
+Modules:
+
+ssr_control.py          Remote control module for Soundscape Renderer
+adm2asdf.py             Converts ADM metadata in a ASDF suitable structure for the Soundscape Renderer
+asdf_write.py           Writes out ASDF XML files
+ssr_player.py           The SSR player executable.
+
+
+To setup distribution:
+> python setup.py sdist
+this will produce a 'dist' directory containing ssr_utils-0.1.tar.gz which can be released.
+
+To install modules:
+In 'dist':
+> tar -xzf ssr_utils-0.1.tar.gz
+> cd ssr_utils-0.1
+> sudo python setup.py install
+
