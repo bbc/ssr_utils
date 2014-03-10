@@ -40,7 +40,10 @@ class SSRPlayer(object):
         self.id_table = []
         for i, pos_list in enumerate(pos['pos']):
             self.id_table.append(i + 1)
-            self.ssr.add_source(pos_list['name'], fname, pos_list['tr'], pos_list['posx'], pos_list['posy'], 0.0)
+            model = 'point'
+            if pos_list['diffuse']:
+                model = 'plane'
+            self.ssr.add_source(pos_list['name'], fname, pos_list['tr'], pos_list['posx'], pos_list['posy'], None, model)
         # give time for sources appear
         for i in range(0, 4):
             time.sleep(0.5)
@@ -71,6 +74,7 @@ class SSRPlayer(object):
                         done = True
             lstart = pos['start']
             co += 1
+        time.sleep(1.0)
         self.ssr.stop()
 
     def Finish(self):

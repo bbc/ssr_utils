@@ -4,6 +4,7 @@ import socket
 import time
 from sys import stdout
 import commands
+import math
 
 class SSRControl():
     def __init__(self,TCP_IP,TCP_PORT):
@@ -88,10 +89,14 @@ class SSRControl():
         MESSAGE = '<request><scene clear="true"/></request>' + '\0'
         self.s.send(MESSAGE)
     #SOURCES
-    def add_source(self,name,file_path,file_channel,pos_x,pos_y,azimuth):
-        MESSAGE='<request><source new="true" name="' + str(name) + '" file="' + str(file_path) + '" channel="' + str(file_channel) + '">'
+    def add_source(self,name,file_path,file_channel,pos_x,pos_y,azimuth,model='point'):
+        MESSAGE='<request><source new="true" name="' + str(name) + '" file="' + str(file_path) + '" channel="' + str(file_channel) + '" model="' + str(model) + '">'
         MESSAGE+='<position x="' + str(pos_x) + '" y="' + str(pos_y) + '" fixed="false"/>'
-        MESSAGE+='<orientation azimuth="' + str(azimuth) + '"/></source></request>' + '\0'
+        # if no azimuth make up value that points towards origin
+        if azimuth == None:
+            azimuth = 180.0 * math.atan2(-pos_y, -pos_x) / math.pi
+        MESSAGE+='<orientation azimuth="' + str(azimuth) + '"/>'
+        MESSAGE+='</source></request>' + '\0'
         self.s.send(MESSAGE)
     def delete_source(self,source_id):
         MESSAGE='<request><delete><source id="' + str(source_id) + '"/></delete></request>' + '\0'
