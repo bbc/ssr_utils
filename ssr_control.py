@@ -1,11 +1,30 @@
 #!/usr/bin/env python
 
+"""Remote control module for Soundscape Renderer.
+
+Copyright 2014 British Broadcasting Corporation.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+"""
+
 import socket
 import time
 from sys import stdout
 import commands
 import math
 
+###########################
+# Class: SSRControl
+# This allows remote control of the SoundScape Renderer
+###########################
 class SSRControl():
     def __init__(self,TCP_IP,TCP_PORT):
         self.TCP_IP = TCP_IP
@@ -17,7 +36,7 @@ class SSRControl():
         # wait until can connect to the host and then continue
         self.ssr_loaded = False
         start_time = time.time()
-        timeout = 5.#s
+        timeout = 10.#s
         while (not self.ssr_loaded):
             try:
                 if ((time.time()-start_time)>timeout):
@@ -62,10 +81,10 @@ class SSRControl():
         stdout.flush()
         MESSAGE = '<request><scene load="' + scene_file + '"/></request>' + '\0'
         self.s.send(MESSAGE)
-        num_ins = 0
+        """num_ins = 0
         num_ins_old = 1
         num_sources = self.count_sources(scene_file);
-        """while num_ins < num_sources:
+        while num_ins < num_sources:
             time.sleep(1)
             jack_ins = commands.getoutput("jack_lsp | grep '" + self.jack_name + ":in_'")
             num_ins=jack_ins.count('\n')+int(jack_ins.__len__()>0)
@@ -137,7 +156,6 @@ class SSRControl():
             else:
                 print "overrun"
         total_time=message_finish_time-start_time
-        #print "Time actually taken:" + str(total_time)
     def move_source_volume(self,source_id,vol_start,vol_end,duration,interval=0.001):
         start_time = time.time()
         next_message_time = start_time + interval
@@ -157,5 +175,4 @@ class SSRControl():
                 sleep(next_message_time-time())
             else:
                 print "overrun"
-        total_time=message_finish_time-start_time
-        #print "Time actually taken:" + str(total_time)  
+        total_time=message_finish_time-start_time 

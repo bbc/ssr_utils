@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 
+"""The SSR player executable.
+
+Copyright 2014 British Broadcasting Corporation.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+"""
+
 import sys
 import wave_bwf
 from math import *
@@ -10,7 +25,10 @@ from subprocess import Popen, PIPE
 from adm2asdf import *
 from adm_parser import *
 
-
+###########################
+# Class: SSRPlayer
+# This allows playback of object-based audio with the SoundScape Renderer
+###########################
 class SSRPlayer(object):
     def __init__(self, _pos_grid, _port=4711, hrir_file=None, hrir_size=None, loop=False):
         sys.stdout.write("SSR Player...")
