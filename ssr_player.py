@@ -24,26 +24,33 @@ import time
 from subprocess import Popen, PIPE
 from adm2asdf import *
 from adm_parser import *
+import argparse
 
 ###########################
 # Class: SSRPlayer
 # This allows playback of object-based audio with the SoundScape Renderer
 ###########################
 class SSRPlayer(object):
-    def __init__(self, _pos_grid, _port=4711, hrir_file=None, hrir_size=None, loop=False):
+    def __init__(self, _pos_grid, _port=4711, renderer='binaural', hrir_file=None, hrir_size=None, setup_file=None, loop=False):
         sys.stdout.write("SSR Player...")
         self.PORT = _port
         self.pos_grid = _pos_grid
-        commands = ['ssr-binaural']
-        if hrir_file:
-            commands.append('--hrirs='+hrir_file)
-        if hrir_size:
-            commands.append('--hrir-size='+str(hrir_size))
-        if loop:
-            commands.append('--loop')
-        commands.append('--input-prefix=DUMMY')
+        if renderer=='vbap':
+            commands = ['ssr-vbap']
+            if scene_file:
+                commands.append('--setup='+setup_file)
+        else:
+            commands = ['ssr-binaural']
+            if hrir_file:
+                commands.append('--hrirs='+hrir_file)
+            if hrir_size:
+                commands.append('--hrir-size='+str(hrir_size))
+            if loop:
+                commands.append('--loop')
+        commands.append('--input-prefix=DUMMY') # TODO: allow to connect to another JACK client
         commands.append('--ip-server='+str(self.PORT))
-        commands.append('--threads=2')
+        commands.append('--threads=2') # TODO: how many threads are appropriate?
+        
         self.ssr_process = Popen(commands, stdout=PIPE, stderr=PIPE)
         # let things settle
         for i in range(0, 5):
@@ -108,24 +115,29 @@ class SSRPlayer(object):
 ################
 
 def main():
-    args = sys.argv[1:]
-    if len(args) < 2 or len(args) > 3:
-        Usage()
+    # args = sys.argv[1:]
+    # if len(args) < 1 or len(args) > 2:
+    #     Usage()
 
-    # Read in some command line stuff
-    hrir_file = None
-    hrir_size = None    
-    if args[1] != '-':
-        hrir_file = args[1]
-        hrir_size = 65536
-    loop = False
-    if len(args) == 3:
-        if args[2] == '-loop':
-            loop = True
-            print "Looping" 
-
+    parser = argparse.ArgumentParser(description='Play a BWF file using the SoundScape Renderer.')
+    parser.add_argument('bwf_file', metavar='<bwf input file>.wav', nargs=1,
+                   help='BWF WAV file to be played')
+    parser.add_argument('--renderer', default='binaural',
+                   help="SSR renderer type: ('binaural' or 'vbap')")
+    parser.add_argument('--hrir_file', metavar='<hrir file>.wav',
+                   help='HRIR file to be used in the SSR binaural renderer')
+    parser.add_argument('--hrir_size', type=int,
+                   help='length of IR used.')
+    parser.add_argument('--spkr_setup_file', metavar='<ssr setup file>.asd',
+                   help='speaker setup file for the SSR VBAP renderer')
+    parser.add_argument('--ip_port', type=int,
+                   help='IP port for socket communication with SSR.')
+    parser.add_argument('--loop', action='store_true')
+    
+    args = parser.parse_args()
+    
     # Open BWF wav file
-    tracklist, fxml, file_duration = ExtractBWF(args[0])
+    tracklist, fxml, file_duration = ExtractBWF(args.bwf_file[0])
 
     # Parse ADM XML to get object and track info
     obj_uid, track_actions = parseXML(fxml, tracklist)
@@ -137,8 +149,8 @@ def main():
     pos_grid = TimePositionGrid(objpos_list, tr_list, 0.1, file_duration)
 
     # Setup and run SSR player
-    player = SSRPlayer(pos_grid, hrir_file=hrir_file, hrir_size=hrir_size, loop=loop)
-    player.Setup(args[0])
+    player = SSRPlayer(pos_grid, renderer=args.renderer, hrir_file=args.hrir_file, hrir_size=args.hrir_size, setup_file=args.spkr_setup_file, loop=args.loop)
+    player.Setup(args.bwf_file[0])
     player.Play()
     while loop:
         player.Play()
@@ -172,8 +184,7 @@ def ExtractBWF(fname):
 
 # Command line usage
 def Usage():
-    print >>sys.stderr, "python ssr_player.py <wav input file> <hrir file> [-loop]"
-    print >>sys.stderr, "     Use '-' for hrir file if one isn't being used."
+    print >>sys.stderr, "python ssr_player.py <wav input file> [--loop]"
     sys.exit(0)    
 
 
