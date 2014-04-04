@@ -31,25 +31,16 @@ import argparse
 # This allows playback of object-based audio with the SoundScape Renderer
 ###########################
 class SSRPlayer(object):
-    def __init__(self, _pos_grid, _port=4711, renderer='binaural', hrir_file=None, hrir_size=None, setup_file=None, loop=False):
+    def __init__(self, _pos_grid, _port=4711, config=None):
         sys.stdout.write("SSR Player...")
         self.PORT = _port
         self.pos_grid = _pos_grid
-        if renderer=='vbap':
-            commands = ['ssr-vbap']
-            if scene_file:
-                commands.append('--setup='+setup_file)
-        else:
-            commands = ['ssr-binaural']
-            if hrir_file:
-                commands.append('--hrirs='+hrir_file)
-            if hrir_size:
-                commands.append('--hrir-size='+str(hrir_size))
-            if loop:
-                commands.append('--loop')
+        commands = ['ssr']
+        if config:
+            commands.append('--config='+setup_file)
         commands.append('--input-prefix=DUMMY') # TODO: allow to connect to another JACK client
         commands.append('--ip-server='+str(self.PORT))
-        commands.append('--threads=2') # TODO: how many threads are appropriate?
+        #commands.append('--threads=2') # TODO: how many threads are appropriate?
         
         self.ssr_process = Popen(commands, stdout=PIPE, stderr=PIPE)
         # let things settle
@@ -122,17 +113,10 @@ def main():
     parser = argparse.ArgumentParser(description='Play a BWF file using the SoundScape Renderer.')
     parser.add_argument('bwf_file', metavar='<bwf input file>.wav', nargs=1,
                    help='BWF WAV file to be played')
-    parser.add_argument('--renderer', default='binaural',
-                   help="SSR renderer type: ('binaural' or 'vbap')")
-    parser.add_argument('--hrir_file', metavar='<hrir file>.wav',
-                   help='HRIR file to be used in the SSR binaural renderer')
-    parser.add_argument('--hrir_size', type=int,
-                   help='length of IR used.')
-    parser.add_argument('--spkr_setup_file', metavar='<ssr setup file>.asd',
-                   help='speaker setup file for the SSR VBAP renderer')
-    parser.add_argument('--ip_port', type=int,
-                   help='IP port for socket communication with SSR.')
-    parser.add_argument('--loop', action='store_true')
+    parser.add_argument('--ip_port', type=int, default=4711,
+                   help='IP port for socket communication with SSR. (Default=4711)')
+    parser.add_argument('--config', metavar='CONFIG_FILE',
+                   help='SoundScape Renderer configuration file')
     
     args = parser.parse_args()
     
@@ -149,7 +133,7 @@ def main():
     pos_grid = TimePositionGrid(objpos_list, tr_list, 0.1, file_duration)
 
     # Setup and run SSR player
-    player = SSRPlayer(pos_grid, renderer=args.renderer, hrir_file=args.hrir_file, hrir_size=args.hrir_size, setup_file=args.spkr_setup_file, loop=args.loop)
+    player = SSRPlayer(pos_grid, _port=args.ip_port, config=args.config)
     player.Setup(args.bwf_file[0])
     player.Play()
     while loop:
