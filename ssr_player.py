@@ -136,8 +136,6 @@ def main():
     player = SSRPlayer(pos_grid, _port=args.ip_port, config=args.config)
     player.Setup(args.bwf_file[0])
     player.Play()
-    while loop:
-        player.Play()
     player.Finish()
 
 

@@ -156,17 +156,19 @@ def WriteFirstASDFFile(pos_grid, wavname, asdfname):
     return asdfname + '_first.asd'
 
 # Calc X value from spherical coords
+# ADM is anti-clockwise, ASDF is clockwise
 def CalcPosX(pos):
     d = pos['distance']['max'] * abs_dis
-    az = pos['azimuth']['max'] * pi / 180.0
+    az = -pos['azimuth']['max'] * pi / 180.0
     el = (pi / 2.0) - (pos['elevation']['max'] * pi / 180.0)
     x = d * sin(el) * sin(az)
     return x
 
 # Calc Y value from spherical coords
+# ADM is anti-clockwise, ASDF is clockwise
 def CalcPosY(pos):
     d = pos['distance']['max'] * abs_dis
-    az = pos['azimuth']['max'] * pi / 180.0
+    az = -pos['azimuth']['max'] * pi / 180.0
     el = (pi / 2.0) - (pos['elevation']['max'] * pi / 180.0)
     y = d * sin(el) * cos(az)
     return y
