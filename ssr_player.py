@@ -31,26 +31,28 @@ import argparse
 # This allows playback of object-based audio with the SoundScape Renderer
 ###########################
 class SSRPlayer(object):
-    def __init__(self, _pos_grid, _port=4711, config=None):
-        sys.stdout.write("SSR Player...")
+    def __init__(self, _pos_grid, _port=4711, renderer="binaural", config=None, ssr_args=None):
+        sys.stdout.write("SSRPlayer: initialising")
         self.PORT = _port
         self.pos_grid = _pos_grid
-        commands = ['ssr']
-        if config:
-            commands.append('--config='+setup_file)
-        commands.append('--input-prefix=DUMMY') # TODO: allow to connect to another JACK client
+        commands = ['ssr-' + renderer]
+        commands.append('--input-prefix=DUMMY') # prevent inputs being connected to system capture
         commands.append('--ip-server='+str(self.PORT))
-        #commands.append('--threads=2') # TODO: how many threads are appropriate?
+        if config:
+            commands.append('--config='+config)
+        if ssr_args:
+            for ssr_arg in ssr_args:
+                commands.append(ssr_arg)
         
-        self.ssr_process = Popen(commands, stdout=PIPE, stderr=PIPE)
+        self.ssr_process = Popen(commands)
         # let things settle
         for i in range(0, 5):
             time.sleep(0.5) 
             sys.stdout.write(".")
-        sys.stdout.write("initalised\n")
+        sys.stdout.write("SSRPlayer: initalised\n")
 
     def Setup(self, fname):
-        sys.stdout.write("SSR Player...")
+        sys.stdout.write("SSRPlayer: beginning setup\n")
         self.ssr = ssr_control.SSRControl('localhost', self.PORT)
         pos = self.pos_grid[0]
         self.id_table = []
@@ -64,10 +66,10 @@ class SSRPlayer(object):
         for i in range(0, 4):
             time.sleep(0.5)
             sys.stdout.write(".")
-        sys.stdout.write("setup complete\n")
+        sys.stdout.write("\nSSRPlayer: setup complete\n")
 
     def Play(self):
-        sys.stdout.write("SSR Player...playing")
+        sys.stdout.write("SSRPlayer: playing\n")
         self.ssr.start()
         start_time = time.time()
         co = 0
@@ -94,9 +96,7 @@ class SSRPlayer(object):
         self.ssr.stop()
 
     def Finish(self):
-        sys.stdout.write("SSR Player...stopping")
-
-        self.ssr_process.communicate()
+        sys.stdout.write("SSRPlayer: stopping\n")
         self.ssr_process.terminate()
      
 
@@ -106,19 +106,18 @@ class SSRPlayer(object):
 ################
 
 def main():
-    # args = sys.argv[1:]
-    # if len(args) < 1 or len(args) > 2:
-    #     Usage()
 
-    parser = argparse.ArgumentParser(description='Play a BWF file using the SoundScape Renderer.')
+    parser = argparse.ArgumentParser(description='Play a BWF file using the SoundScape Renderer. (Unknown arguments are forwarded to the SoundScape Renderer.)')
     parser.add_argument('bwf_file', metavar='<bwf input file>.wav', nargs=1,
                    help='BWF WAV file to be played')
+    parser.add_argument('--renderer', default="binaural",
+                   help='SSR renderer type')
     parser.add_argument('--ip_port', type=int, default=4711,
                    help='IP port for socket communication with SSR. (Default=4711)')
-    parser.add_argument('--config', metavar='CONFIG_FILE',
+    parser.add_argument('--ssr-config', metavar='CONFIG_FILE',
                    help='SoundScape Renderer configuration file')
     
-    args = parser.parse_args()
+    args,unknown_args = parser.parse_known_args()
     
     # Open BWF wav file
     tracklist, fxml, file_duration = ExtractBWF(args.bwf_file[0])
@@ -133,7 +132,7 @@ def main():
     pos_grid = TimePositionGrid(objpos_list, tr_list, 0.1, file_duration)
 
     # Setup and run SSR player
-    player = SSRPlayer(pos_grid, _port=args.ip_port, config=args.config)
+    player = SSRPlayer(pos_grid, _port=args.ip_port, renderer=args.renderer, config=args.ssr_config, ssr_args=unknown_args)
     player.Setup(args.bwf_file[0])
     player.Play()
     player.Finish()
@@ -161,13 +160,7 @@ def ExtractBWF(fname):
     fa = f.read_axml()
     fxml.write(fa)
     fxml.seek(0)
-    return tracklist, fxml, file_duration
-
-
-# Command line usage
-def Usage():
-    print >>sys.stderr, "python ssr_player.py <wav input file> [--loop]"
-    sys.exit(0)    
+    return tracklist, fxml, file_duration  
 
 
 
