@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(name='ssr_utils', 
-	  version='1.0', 
+	  version='0.1', 
 	  description='Python modules for playing the BWF sound scenes with the SoundScape Renderer.',
 	  author='David Marston, Chris Pike',
 	  author_email='david.marston@bbc.co.uk, chris.pike@bbc.co.uk',
